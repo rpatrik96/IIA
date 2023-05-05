@@ -77,13 +77,7 @@ if __name__ == '__main__':
         assert False, 'savefolder looks wrong'
 
     # Generate sensor signal --------------------------------------
-    x, s, y,_,_,_,_,_,_ = generate_artificial_data(num_comp=num_comp,
-                                                   num_data=num_data,
-                                                   num_layer=num_layer,
-                                                   num_basis=num_basis,
-                                                   modulate_range1=modulate_range,
-                                                   modulate_range2=modulate_range2,
-                                                   random_seed=random_seed)
+    np.random.seed(random_seed)
 
     if net_model == 'itcl':  # Remake label for TCL learning
         num_segmentdata = int(np.ceil(num_data / num_segment))
