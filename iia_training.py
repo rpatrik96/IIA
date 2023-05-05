@@ -21,7 +21,7 @@ from subfunc.showdata import *
 # Data generation ---------------------------------------------
 num_layer = 3  # number of layers of mixing-MLP
 num_comp = 20  # number of components (dimension)
-num_data = 2**18  # number of data points
+num_data = 2**14  # number of data points
 num_basis = 64  # number of frequencies of fourier bases
 modulate_range = [-2, 2]
 modulate_range2 = [-2, 2]
@@ -53,111 +53,111 @@ summary_steps = int(1e4)  # interval to save summary
 apply_pca = True  # apply PCA for preprocessing or not
 weight_decay = 1e-5  # weight decay
 
+if __name__ == '__main__':
+    # Other -------------------------------------------------------
+    # # Note: save folder must be under ./storage
+    train_dir_base = './storage'
 
-# Other -------------------------------------------------------
-# # Note: save folder must be under ./storage
-train_dir_base = './storage'
+    train_dir = os.path.join(train_dir_base, 'model')  # save directory (Caution!! this folder will be removed at first)
 
-train_dir = os.path.join(train_dir_base, 'model')  # save directory (Caution!! this folder will be removed at first)
-
-saveparmpath = os.path.join(train_dir, 'parm.pkl')  # file name to save parameters
+    saveparmpath = os.path.join(train_dir, 'parm.pkl')  # file name to save parameters
 
 
-# =============================================================
-# =============================================================
+    # =============================================================
+    # =============================================================
 
-# Prepare save folder -----------------------------------------
-if train_dir.find('/storage/') > -1:
-    if os.path.exists(train_dir):
-        print('delete savefolder: %s...' % train_dir)
-        shutil.rmtree(train_dir)  # remove folder
-    print('make savefolder: %s...' % train_dir)
-    os.makedirs(train_dir)  # make folder
-else:
-    assert False, 'savefolder looks wrong'
+    # Prepare save folder -----------------------------------------
+    if train_dir.find('/storage/') > -1:
+        if os.path.exists(train_dir):
+            print('delete savefolder: %s...' % train_dir)
+            shutil.rmtree(train_dir)  # remove folder
+        print('make savefolder: %s...' % train_dir)
+        os.makedirs(train_dir)  # make folder
+    else:
+        assert False, 'savefolder looks wrong'
 
-# Generate sensor signal --------------------------------------
-x, s, y,_,_,_,_,_,_ = generate_artificial_data(num_comp=num_comp,
-                                               num_data=num_data,
-                                               num_layer=num_layer,
-                                               num_basis=num_basis,
-                                               modulate_range1=modulate_range,
-                                               modulate_range2=modulate_range2,
-                                               random_seed=random_seed)
+    # Generate sensor signal --------------------------------------
+    x, s, y,_,_,_,_,_,_ = generate_artificial_data(num_comp=num_comp,
+                                                   num_data=num_data,
+                                                   num_layer=num_layer,
+                                                   num_basis=num_basis,
+                                                   modulate_range1=modulate_range,
+                                                   modulate_range2=modulate_range2,
+                                                   random_seed=random_seed)
 
-if net_model == 'itcl':  # Remake label for TCL learning
-    num_segmentdata = int(np.ceil(num_data / num_segment))
-    y = np.tile(np.arange(num_segment), [num_segmentdata, 1]).T.reshape(-1)[:num_data]
+    if net_model == 'itcl':  # Remake label for TCL learning
+        num_segmentdata = int(np.ceil(num_data / num_segment))
+        y = np.tile(np.arange(num_segment), [num_segmentdata, 1]).T.reshape(-1)[:num_data]
 
-# Preprocessing -----------------------------------------------
-x, pca_parm = pca(x, num_comp=num_comp)  # PCA
+    # Preprocessing -----------------------------------------------
+    x, pca_parm = pca(x, num_comp=num_comp)  # PCA
 
-# Train model  ------------------------------------------------
-if net_model == 'igcl':
-    igcl_train(x.T,
-               y,
-               list_hidden_nodes=list_hidden_nodes,
-               list_hidden_nodes_z=list_hidden_nodes_z,
-               num_data=num_data,
-               num_basis=num_basis,
-               initial_learning_rate=initial_learning_rate,
-               momentum=momentum,
-               max_steps=max_steps,
-               decay_steps=decay_steps,
-               decay_factor=decay_factor,
-               batch_size=batch_size,
-               train_dir=train_dir,
-               ar_order=ar_order,
-               weight_decay=weight_decay,
-               checkpoint_steps=checkpoint_steps,
-               moving_average_decay=moving_average_decay,
-               summary_steps=summary_steps,
-               random_seed=random_seed)
-elif net_model == 'itcl':
-    itcl_train(x.T,
-               y,
-               list_hidden_nodes=list_hidden_nodes,
-               list_hidden_nodes_z=list_hidden_nodes_z,
-               num_segment=num_segment,
-               initial_learning_rate=initial_learning_rate,
-               momentum=momentum,
-               max_steps=max_steps,
-               decay_steps=decay_steps,
-               decay_factor=decay_factor,
-               batch_size=batch_size,
-               train_dir=train_dir,
-               ar_order=ar_order,
-               weight_decay=weight_decay,
-               checkpoint_steps=checkpoint_steps,
-               moving_average_decay=moving_average_decay,
-               summary_steps=summary_steps,
-               random_seed=random_seed)
+    # Train model  ------------------------------------------------
+    if net_model == 'igcl':
+        igcl_train(x.T,
+                   y,
+                   list_hidden_nodes=list_hidden_nodes,
+                   list_hidden_nodes_z=list_hidden_nodes_z,
+                   num_data=num_data,
+                   num_basis=num_basis,
+                   initial_learning_rate=initial_learning_rate,
+                   momentum=momentum,
+                   max_steps=max_steps,
+                   decay_steps=decay_steps,
+                   decay_factor=decay_factor,
+                   batch_size=batch_size,
+                   train_dir=train_dir,
+                   ar_order=ar_order,
+                   weight_decay=weight_decay,
+                   checkpoint_steps=checkpoint_steps,
+                   moving_average_decay=moving_average_decay,
+                   summary_steps=summary_steps,
+                   random_seed=random_seed)
+    elif net_model == 'itcl':
+        itcl_train(x.T,
+                   y,
+                   list_hidden_nodes=list_hidden_nodes,
+                   list_hidden_nodes_z=list_hidden_nodes_z,
+                   num_segment=num_segment,
+                   initial_learning_rate=initial_learning_rate,
+                   momentum=momentum,
+                   max_steps=max_steps,
+                   decay_steps=decay_steps,
+                   decay_factor=decay_factor,
+                   batch_size=batch_size,
+                   train_dir=train_dir,
+                   ar_order=ar_order,
+                   weight_decay=weight_decay,
+                   checkpoint_steps=checkpoint_steps,
+                   moving_average_decay=moving_average_decay,
+                   summary_steps=summary_steps,
+                   random_seed=random_seed)
 
-# Save parameters necessary for evaluation --------------------
-model_parm = {'random_seed': random_seed,
-              'num_comp': num_comp,
-              'num_data': num_data,
-              'ar_order': ar_order,
-              'num_basis': num_basis,
-              'modulate_range': modulate_range,
-              'modulate_range2': modulate_range2,
-              'num_layer': num_layer,
-              'list_hidden_nodes': list_hidden_nodes,
-              'list_hidden_nodes_z': list_hidden_nodes_z,
-              'moving_average_decay': moving_average_decay,
-              'pca_parm': pca_parm,
-              'num_segment': num_segment if 'num_segment' in locals() else None,
-              'num_segmentdata': num_segmentdata if 'num_segmentdata' in locals() else None,
-              'net_model': net_model}
+    # Save parameters necessary for evaluation --------------------
+    model_parm = {'random_seed': random_seed,
+                  'num_comp': num_comp,
+                  'num_data': num_data,
+                  'ar_order': ar_order,
+                  'num_basis': num_basis,
+                  'modulate_range': modulate_range,
+                  'modulate_range2': modulate_range2,
+                  'num_layer': num_layer,
+                  'list_hidden_nodes': list_hidden_nodes,
+                  'list_hidden_nodes_z': list_hidden_nodes_z,
+                  'moving_average_decay': moving_average_decay,
+                  'pca_parm': pca_parm,
+                  'num_segment': num_segment if 'num_segment' in locals() else None,
+                  'num_segmentdata': num_segmentdata if 'num_segmentdata' in locals() else None,
+                  'net_model': net_model}
 
-print('Save parameters...')
-with open(saveparmpath, 'wb') as f:
-    pickle.dump(model_parm, f, pickle.HIGHEST_PROTOCOL)
+    print('Save parameters...')
+    with open(saveparmpath, 'wb') as f:
+        pickle.dump(model_parm, f, pickle.HIGHEST_PROTOCOL)
 
-# Save as tarfile
-tarname = train_dir + ".tar.gz"
-archive = tarfile.open(tarname, mode="w:gz")
-archive.add(train_dir, arcname="./")
-archive.close()
+    # Save as tarfile
+    tarname = train_dir + ".tar.gz"
+    archive = tarfile.open(tarname, mode="w:gz")
+    archive.add(train_dir, arcname="./")
+    archive.close()
 
-print('done.')
+    print('done.')
