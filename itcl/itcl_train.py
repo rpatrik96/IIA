@@ -148,8 +148,6 @@ def train(data,
             writer.add_scalar('scalar/lr', lr, step)
             writer.add_scalar('scalar/loss', loss_val, step)
             writer.add_scalar('scalar/accu', accu_val, step)
-            h_val = h.cpu().detach().numpy()
-
 
         # save the model checkpoint periodically.
         if step % checkpoint_steps == 0:
