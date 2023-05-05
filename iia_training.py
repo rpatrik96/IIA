@@ -8,6 +8,8 @@ import pickle
 import shutil
 import tarfile
 
+import numpy as np
+
 from subfunc.generate_artificial_data import generate_artificial_data
 from subfunc.preprocessing import pca
 from igcl.igcl_train import train as igcl_train
@@ -41,7 +43,7 @@ list_hidden_nodes_z = None
 
 
 # Training ----------------------------------------------------
-initial_learning_rate = 0.1  # initial learning rate (default:0.1)
+initial_learning_rate = 0.01  # initial learning rate (default:0.1)
 momentum = 0.9  # momentum parameter of SGD
 max_steps = int(3e6)  # number of iterations (mini-batches)
 decay_steps = int(1e6)  # decay steps (tf.train.exponential_decay)
@@ -82,6 +84,52 @@ if __name__ == '__main__':
     if net_model == 'itcl':  # Remake label for TCL learning
         num_segmentdata = int(np.ceil(num_data / num_segment))
         y = np.tile(np.arange(num_segment), [num_segmentdata, 1]).T.reshape(-1)[:num_data]
+
+    from state_space_models.lti import LTISystem
+
+    lti = LTISystem.controllable_system(num_comp, num_comp)
+
+    rank = 0
+    num_attempt = 0
+
+    while rank < num_comp:
+        segment_variances = np.random.randn(num_segment, num_comp)**2/2
+        # check sufficient variability of the variances
+        base_prec = 1./segment_variances[0,:]
+        delta_prec = 1./segment_variances[1:,:] - base_prec
+        rank = np.linalg.matrix_rank(delta_prec)
+        print(f"rank: {rank}")
+
+        num_attempt += 1
+        if num_attempt > 100:
+            raise ValueError("Could not find sufficiently variable system!")
+
+
+    # iterate over the segment variances,
+    # generate multivariate normal with each variance,
+    # and simulate it with the LTI system
+    obs = []
+    states = []
+    for i in range(num_segment):
+        segment_var = segment_variances[i,:]
+        segment_cov = np.diag(segment_var)
+        segment_mean = np.zeros(num_comp)
+        # segment_y = np.ones(num_segmentdata, dtype=int) * i
+        segment_U = np.random.multivariate_normal(segment_mean, segment_cov, num_segmentdata)
+
+        _, segment_obs, segment_state = lti.simulate(segment_U, dt=0.01)
+
+        obs.append(segment_obs)
+        states.append(segment_state)
+
+    obs = np.concatenate(obs, axis=0)
+    states = np.concatenate(states, axis=0)
+
+
+    x = obs.T
+    s = states.T
+
+
 
     # Preprocessing -----------------------------------------------
     x, pca_parm = pca(x, num_comp=num_comp)  # PCA
